@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Liste des matières</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" th:href="@{/}">
+                <i class="bi bi-pencil-square"></i> Correction Examens
+            </a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/etudiants}">Étudiants</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" th:href="@{/matieres}">Matières</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/correcteurs}">Correcteurs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/examens}">Examens</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/parametres}">Paramètres</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-3">
+            <div class="col">
+                <h2><i class="bi bi-book"></i> Liste des matières</h2>
+            </div>
+            <div class="col text-end">
+                <a th:href="@{/matieres/nouveau}" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Nouvelle matière
+                </a>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i> <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Barre de recherche -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <form th:action="@{/matieres/search}" method="get" class="row g-3">
+                    <div class="col-md-10">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" name="nom" 
+                                   placeholder="Rechercher par nom..." th:value="${recherche}">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search"></i> Rechercher
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tableau -->
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nom de la matière</th>
+                        <th>Coefficient</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="matiere : ${matieres}">
+                        <td th:text="${matiere.idMatiere}"></td>
+                        <td th:text="${matiere.nomMatiere}"></td>
+                        <td th:text="${matiere.coefficient}"></td>
+                        <td class="text-center">
+                            <a th:href="@{/matieres/{id}(id=${matiere.idMatiere})}" 
+                               class="btn btn-sm btn-info" title="Voir détails">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a th:href="@{/matieres/edit/{id}(id=${matiere.idMatiere})}" 
+                               class="btn btn-sm btn-warning" title="Modifier">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a th:href="@{/matieres/delete/{id}(id=${matiere.idMatiere})}" 
+                               class="btn btn-sm btn-danger" 
+                               title="Supprimer"
+                               onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette matière ?')">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(matieres)}">
+                        <td colspan="4" class="text-center text-muted py-4">
+                            <i class="bi bi-emoji-frown fs-1 d-block"></i>
+                            Aucune matière trouvée
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

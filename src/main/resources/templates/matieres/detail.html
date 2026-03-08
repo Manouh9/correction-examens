@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Détail matière</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" th:href="@{/}">
+                <i class="bi bi-pencil-square"></i> Correction Examens
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0"><i class="bi bi-book"></i> Détails de la matière</h4>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="150"><i class="bi bi-hash"></i> ID :</th>
+                                <td th:text="${matiere.idMatiere}"></td>
+                            </tr>
+                            <tr>
+                                <th><i class="bi bi-tag"></i> Nom :</th>
+                                <td th:text="${matiere.nomMatiere}"></td>
+                            </tr>
+                            <tr>
+                                <th><i class="bi bi-calculator"></i> Coefficient :</th>
+                                <td>
+                                    <span class="badge bg-primary" th:text="${matiere.coefficient}"></span>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a th:href="@{/matieres}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Retour à la liste
+                            </a>
+                            <div>
+                                <a th:href="@{/matieres/edit/{id}(id=${matiere.idMatiere})}" class="btn btn-warning">
+                                    <i class="bi bi-pencil"></i> Modifier
+                                </a>
+                                <a th:href="@{/matieres/delete/{id}(id=${matiere.idMatiere})}" 
+                                   class="btn btn-danger"
+                                   onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette matière ?\nAttention: Cette action est irréversible.')">
+                                    <i class="bi bi-trash"></i> Supprimer
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
