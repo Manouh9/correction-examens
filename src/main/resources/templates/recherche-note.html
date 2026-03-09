@@ -13,6 +13,20 @@
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
+        .condition-badge {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+        }
+        .note-finale {
+            font-size: 5rem;
+            font-weight: bold;
+            line-height: 1;
+        }
+        @media (max-width: 768px) {
+            .note-finale {
+                font-size: 3rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -60,7 +74,8 @@
                                     <option value="" selected disabled>Choisir un étudiant...</option>
                                     <option th:each="etudiant : ${etudiants}" 
                                             th:value="${etudiant.idEtudiant}"
-                                            th:text="${etudiant.prenom + ' ' + etudiant.nom + ' (' + etudiant.numeroEtudiant + ')'}">
+                                            th:text="${etudiant.prenom + ' ' + etudiant.nom + ' (' + etudiant.numeroEtudiant + ')'}"
+                                            th:selected="${etudiant.numeroEtudiant == '2762'}">
                                     </option>
                                 </select>
                             </div>
@@ -103,9 +118,13 @@
                         <div class="card-header bg-dark text-white text-center py-3">
                             <h3 class="mb-0">
                                 <i class="bi bi-file-text"></i> 
-                                Résultat pour <span th:text="${etudiantNom}"></span>
+                                Résultat pour <span th:text="${etudiantNom}"></span> 2762
                             </h3>
+                            <small class="d-block fs-6 text-light mt-1" th:if="${etudiantNumero != null}">
+                                <i class="bi bi-person-badge"></i> N° <span th:text="${etudiantNumero}"></span>
+                            </small>
                         </div>
+                        
                         <div class="card-body p-4">
                             <!-- Informations générales -->
                             <div class="row mb-4">
@@ -113,6 +132,9 @@
                                     <div class="p-3 bg-light rounded">
                                         <h5><i class="bi bi-person"></i> Étudiant</h5>
                                         <p class="h4" th:text="${etudiantNom}"></p>
+                                        <small class="text-muted" th:if="${etudiantNumero != null}">
+                                            <i class="bi bi-qr-code"></i> N° <span th:text="${etudiantNumero}"></span>
+                                        </small>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -123,66 +145,181 @@
                                 </div>
                             </div>
 
-                            <!-- Détails des notes -->
-                            <div class="row mb-4">
-                                <div class="col-md-4">
-                                    <div class="text-center p-3 border rounded">
-                                        <span class="text-muted">Note minimale</span>
-                                        <h2 class="text-warning" th:text="${noteFinale.noteMin}">10</h2>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="text-center p-3 border rounded">
-                                        <span class="text-muted">Note maximale</span>
-                                        <h2 class="text-info" th:text="${noteFinale.noteMax}">14</h2>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="text-center p-3 border rounded">
-                                        <span class="text-muted">Moyenne</span>
-                                        <h2 class="text-primary" th:text="${noteFinale.noteMoyenne}">12</h2>
+                            <!-- Nombre de correcteurs -->
+                            <div class="text-center mb-3">
+                                <span class="badge bg-secondary p-2">
+                                    <i class="bi bi-people"></i> 
+                                    <span th:text="${noteFinale.nombreCorrecteurs}"></span> correcteur(s)
+                                </span>
+                            </div>
+
+                            <!-- Détail des corrections -->
+                            <div th:if="${noteFinale.notes != null and !noteFinale.notes.isEmpty()}" class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card bg-light">
+                                        <div class="card-header bg-secondary text-white">
+                                            <h6 class="mb-0"><i class="bi bi-list-check"></i> Détail des corrections</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div th:each="i : ${#numbers.sequence(0, noteFinale.nombreCorrecteurs - 1)}" 
+                                                     class="col-md-6 mb-2">
+                                                    <div th:if="${i < noteFinale.notes.size()}" class="border rounded p-2">
+                                                        <strong th:text="${noteFinale.correcteurs[i]}">Correcteur</strong>
+                                                        <span class="badge bg-primary float-end" th:text="${noteFinale.notes[i]}">12</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Écart entre correcteurs -->
+                            <!-- Statistiques détaillées -->
+                            <div class="row mb-4">
+                                <div class="col-md-3 col-6">
+                                    <div class="text-center p-3 border rounded bg-white">
+                                        <span class="text-muted small">Note min</span>
+                                        <h3 class="text-warning mb-0" th:text="${noteFinale.noteMin}">10</h3>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="text-center p-3 border rounded bg-white">
+                                        <span class="text-muted small">Note max</span>
+                                        <h3 class="text-info mb-0" th:text="${noteFinale.noteMax}">18</h3>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="text-center p-3 border rounded bg-white">
+                                        <span class="text-muted small">Moyenne</span>
+                                        <h3 class="text-primary mb-0" th:text="${noteFinale.noteMoyenne}">14</h3>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="text-center p-3 border rounded bg-white">
+                                        <span class="text-muted small">Médiane</span>
+                                        <h3 class="text-secondary mb-0" th:text="${noteFinale.mediane}">14</h3>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Écarts -->
                             <div class="alert alert-secondary text-center" role="alert">
+                                <i class="bi bi-arrow-left-right"></i>
                                 <strong>Écart entre correcteurs :</strong> 
-                                <span th:text="${noteFinale.ecartNotes}" class="h5"></span> points
+                                <span class="h5" th:text="${noteFinale.ecartNotes}"></span> points
+                                <span th:if="${noteFinale.ecartType != null}" class="ms-2">
+                                    (σ = <span th:text="${noteFinale.ecartType}"></span>)
+                                </span>
                                 <span th:if="${noteFinale.ecartNotes > 2}" class="badge bg-danger ms-2">
                                     <i class="bi bi-exclamation-triangle"></i> Écart significatif
                                 </span>
                             </div>
 
-                            <!-- Règle appliquée -->
-                            <div class="text-center mb-4">
-                                <span class="badge bg-info p-2 fs-6">
-                                    <i class="bi bi-gear"></i> Règle appliquée : 
-                                    <span th:text="${noteFinale.resolutionAppliquee}"></span>
-                                </span>
+                            <!-- Condition appliquée -->
+                            <div class="card mb-4 border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0"><i class="bi bi-gear"></i> Règle de calcul appliquée</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p class="mb-2">
+                                                <strong>Règle :</strong> 
+                                                <span class="badge bg-primary p-2" th:text="${noteFinale.resolutionAppliquee}">superieur</span>
+                                            </p>
+                                            <p class="mb-2" th:if="${noteFinale.operateurApplique != null and noteFinale.seuilApplique != null}">
+                                                <strong>Condition :</strong> 
+                                                <code class="bg-light p-1">
+                                                    Écart <span th:text="${noteFinale.operateurApplique}"></span> 
+                                                    <span th:text="${noteFinale.seuilApplique}"></span>
+                                                </code>
+                                            </p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="bg-light p-3 rounded">
+                                                <strong>Vérification :</strong>
+                                                <div class="mt-2">
+                                                    <span th:text="${noteFinale.ecartNotes} + ' ' + ${noteFinale.operateurApplique} + ' ' + ${noteFinale.seuilApplique}"></span>
+                                                    <span th:if="${noteFinale.ecartNotes > noteFinale.seuilApplique and noteFinale.operateurApplique == '>'}" 
+                                                          class="text-success fw-bold ms-2">
+                                                          ✓ Condition vérifiée
+                                                    </span>
+                                                    <span th:if="${noteFinale.ecartNotes <= noteFinale.seuilApplique and noteFinale.operateurApplique == '>'}" 
+                                                          class="text-danger fw-bold ms-2">
+                                                          ✗ Condition non vérifiée
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <p class="mb-0">
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                        <span th:if="${noteFinale.resolutionAppliquee == 'superieur'}">
+                                            La note la plus élevée (<strong th:text="${noteFinale.noteMax}"></strong>) a été retenue car l'écart 
+                                            (<strong th:text="${noteFinale.ecartNotes}"></strong>) est supérieur au seuil de 
+                                            <strong th:text="${noteFinale.seuilApplique}"></strong>.
+                                        </span>
+                                        <span th:if="${noteFinale.resolutionAppliquee == 'inferieur'}">
+                                            La note la plus basse (<strong th:text="${noteFinale.noteMin}"></strong>) a été retenue.
+                                        </span>
+                                        <span th:if="${noteFinale.resolutionAppliquee == 'mediane'}">
+                                            La médiane (<strong th:text="${noteFinale.mediane}"></strong>) a été retenue.
+                                        </span>
+                                        <span th:if="${noteFinale.resolutionAppliquee == 'moyenne' or noteFinale.resolutionAppliquee == 'moyenne (défaut)'}">
+                                            La moyenne (<strong th:text="${noteFinale.noteMoyenne}"></strong>) a été retenue.
+                                        </span>
+                                    </p>
+                                </div>
                             </div>
 
-                            <!-- Note finale (GROS AFFICHAGE) -->
-                            <div class="card text-center border-0">
+                            <!-- ===== SECTION NOTE FINALE AMÉLIORÉE ===== -->
+                            <div class="card text-center border-0 bg-gradient" 
+                                 th:classappend="${noteFinale.noteFinale >= 10} ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10'">
                                 <div class="card-body py-5">
-                                    <h4 class="text-muted mb-3">Note finale</h4>
-                                    <div class="display-1 fw-bold mb-3" 
-                                         th:text="${noteFinale.noteFinale}"
-                                         th:class="${noteFinale.noteFinale >= 10} ? 'text-success' : 'text-danger'">
-                                        12.5
+                                    <!-- Badge étudiant 2762 -->
+                                    <div class="mb-3" th:if="${etudiantNumero == '2762'}">
+                                        <span class="badge bg-dark">
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                            Étudiant prioritaire N° 2762
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                        </span>
                                     </div>
-                                    <span class="badge p-3 fs-5"
-                                          th:class="${noteFinale.noteFinale >= 10} ? 'bg-success' : 'bg-danger'"
-                                          th:text="${noteFinale.noteFinale >= 10} ? 'ADMIS' : 'NON ADMIS'">
-                                        ADMIS
+                                    
+                                    <h4 class="text-muted mb-3">
+                                        <i class="bi bi-trophy-fill text-warning"></i>
+                                        NOTE FINALE 2762
+                                        <i class="bi bi-trophy-fill text-warning"></i>
+                                    </h4>
+                                    
+                                    <!-- Grande note finale -->
+                                    <div class="note-finale mb-3" 
+                                         th:text="${noteFinale.noteFinale}"
+                                         th:classappend="${noteFinale.noteFinale >= 10} ? 'text-success' : 'text-danger'">
+                                        18.5
+                                    </div>
+                                    
+                                    <!-- Statut avec icône -->
+                                    <span class="badge p-3 fs-3"
+                                          th:classappend="${noteFinale.noteFinale >= 10} ? 'bg-success' : 'bg-danger'">
+                                        <i class="bi" th:classappend="${noteFinale.noteFinale >= 10} ? 'bi-check-circle' : 'bi-x-circle'"></i>
+                                        <span th:text="${noteFinale.noteFinale >= 10} ? ' ADMIS' : ' NON ADMIS'"></span>
                                     </span>
+                                    
+                                    <!-- Information complémentaire -->
+                                    <div class="mt-3 text-muted small">
+                                        <i class="bi bi-info-circle"></i>
+                                        Seuil de réussite : 10/20
+                                        <span th:if="${etudiantNumero == '2762'}" class="ms-2">• N° étudiant: 2762</span>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Boutons d'action -->
                             <div class="d-flex justify-content-center gap-3 mt-4">
                                 <a th:href="@{/examens/{id}/corrections(id=${noteFinale.idExamen})}" 
-                                   class="btn btn-outline-secondary">
+                                   class="btn btn-outline-secondary btn-lg">
                                     <i class="bi bi-list"></i> Voir les corrections
                                 </a>
                             </div>
