@@ -17,9 +17,6 @@ CREATE TABLE correcteur (
     email VARCHAR(200) UNIQUE
 );
 
-INSERT INTO correcteur (nom, prenom, email) VALUES
-('Rakotofringa', 'Pierra', 'pierre.rakotofringa@gmail.com'),
-('Andrianandrasana', 'Marie', 'marie.andrianandrasana@gmail.com');
 
 -- Table des matières
 CREATE TABLE matiere (
@@ -34,11 +31,6 @@ CREATE TABLE resolution (
     nom VARCHAR(50) NOT NULL  -- 'moyenne', 'superieur', 'inferieur'
 );
 
-INSERT INTO resolution (nom) VALUES 
-('moyenne'),
-('superieur'), 
-('inferieur');
-
 -- Table des opérateurs
 CREATE TABLE operateur (
     id_operateur INT PRIMARY KEY AUTO_INCREMENT,
@@ -46,13 +38,6 @@ CREATE TABLE operateur (
     symbole VARCHAR(10) NOT NULL
 );
 
-INSERT INTO operateur (nom_operateur, symbole) VALUES
-('egal', '='),
-('superieur', '>'),
-('inferieur', '<'),
-('superieur_egal', '>='),
-('inferieur_egal', '<='),
-('entre', 'BETWEEN');
 
 -- Table des paramètres (configuration par matière)
 CREATE TABLE parametre (
@@ -79,11 +64,6 @@ CREATE TABLE examen (
     FOREIGN KEY (id_matiere) REFERENCES matiere(id_matiere)
 );
 
-INSERT INTO examen (id_etudiant, id_matiere, date_examen) VALUES
-(1,1, '2024-03-15');
-
-INSERT INTO examen (id_etudiant, id_matiere, date_examen) VALUES
-(1,2, '2024-03-15');
 
 -- Table des notes (corrections)
 CREATE TABLE note (
@@ -98,13 +78,6 @@ CREATE TABLE note (
     UNIQUE KEY unique_correction (id_examen, id_correcteur)
 );
 
-insert into note (id_examen, id_correcteur, valeur_note, date_correction, commentaire) values
-(1, 1, 10.5, '2024-03-20 14:30:00', 'Raisonnement correct mais quelques erreurs'),
-(1, 2, 14.0, '2024-03-21 09:15:00', 'Bonne copie, très bien rédigé');
-
-insert into note (id_examen, id_correcteur, valeur_note, date_correction, commentaire) values
-(2, 1, 18.5, '2024-03-20 14:30:00', 'Bon travail'),
-(2, 2, 14.0, '2024-03-21 09:15:00', 'Il faudra encore des efforts');
 
 SELECT 
     e.nom AS etudiant_nom,
@@ -189,34 +162,3 @@ SELECT
 FROM notes_finales nf
 CROSS JOIN regle_notation rn
 WHERE rn.active = TRUE;
-
-
--- Insérer deux corrections différentes pour la même copie
-INSERT INTO corrections (id_copie, id_correcteur, note, date_correction, commentaires) VALUES
-(1, 1, 10.5, '2024-03-20 14:30:00', 'Raisonnement correct mais quelques erreurs'),
-(1, 2, 14.0, '2024-03-21 09:15:00', 'Bonne copie, très bien rédigé');
-
-INSERT INTO corrections (id_copie, id_correcteur, note, date_correction, commentaires) VALUES
-(1, 1, 10.5, '2024-03-20 14:30:00', 'Raisonnement correct mais quelques erreurs'),
-(1, 2, 14.0, '2024-03-21 09:15:00', 'Bonne copie, très bien rédigé');
-
-
--- Maths : si écart > 2, prendre la note la plus élevée
-INSERT INTO parametre (id_matiere, id_resolution, id_operateur, seuil_min, date_application, active) VALUES 
-(2, 2, 2, 2.0, '2024-01-01', true);
-
--- Français : si écart <= 3, prendre la moyenne
-INSERT INTO parametre (id_matiere, id_resolution, id_operateur, seuil_min, date_application, active) VALUES 
-(2, 1, 5, 3.0, '2024-01-01', true);
-
--- Physique : si écart > 1.5, prendre la note la plus basse
-INSERT INTO parametre (id_matiere, id_resolution, id_operateur, seuil_min, date_application, active) VALUES 
-(3, 3, 2, 1.5, '2024-01-01', true);
-
--- Histoire : toujours prendre la moyenne
-INSERT INTO parametre (id_matiere, id_resolution, id_operateur, seuil_min, date_application, active) VALUES 
-(4, 1, 5, 5.0, '2024-01-01', true);
-
--- Anglais : toujours prendre la note la plus élevée
-INSERT INTO parametre (id_matiere, id_resolution, id_operateur, seuil_min, date_application, active) VALUES 
-(5, 2, 2, 0.0, '2024-01-01', true);

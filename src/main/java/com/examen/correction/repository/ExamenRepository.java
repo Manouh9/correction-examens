@@ -20,8 +20,7 @@ public interface ExamenRepository extends JpaRepository<Examen, Long> {
     List<Examen> findByDateExamen(LocalDate date);
     List<Examen> findByDateExamenBetween(LocalDate dateDebut, LocalDate dateFin);
     List<Examen> findByEtudiantAndMatiere(Etudiant etudiant, Matiere matiere);
-    
-    // CORRECTION ICI : Utiliser les noms exacts des propriétés
+
     Optional<Examen> findByEtudiant_IdEtudiantAndMatiere_IdMatiere(Long etudiantId, Long matiereId);
     
     // Ou avec @Query (plus explicite)

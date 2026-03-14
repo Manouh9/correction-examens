@@ -1,20 +1,9 @@
 mvn clean 
 mvn clean compile
-# Nettoyer, compiler et lancer en une seule commande
+
 mvn clean spring-boot:run
 mvn spring-boot:run
 
-http://localhost:8080/examens (Liste des examens)
-
-http://localhost:8080/etudiants (Liste des étudiants)
-
-http://localhost:8080/correcteurs (Liste des correcteurs)
-
-http://localhost:8080/parametres (Configuration des règles)
-
-http://localhost:8080/examens/ecarts (Voir les écarts de notes)
-
-http://localhost:8080/examens/notes-finales (Voir les notes calculées)
 
 http://localhost:8080/examen-correction/
 http://localhost:8080/examen-correction/examens
@@ -63,51 +52,3 @@ http://localhost:8080/examen-correction/parametres
 http://localhost:8080/examen-correction/parametres/1
 http://localhost:8080/examen-correction/parametres/nouveau
 http://localhost:8080/examen-correction/parametres/matiere/1
-
-cd D:\ITU\Mr Naina\PROJET\correction-examens
-
-:: Créer le fichier .gitignore avec la première ligne
-echo target/ > .gitignore
-
-:: Ajouter les autres lignes (utilisez >> pour ajouter à la suite)
-echo .idea/ >> .gitignore
-echo *.class >> .gitignore
-echo *.log >> .gitignore
-echo .settings/ >> .gitignore
-echo .project >> .gitignore
-echo .classpath >> .gitignore
-echo *.iml >> .gitignore
-echo .DS_Store >> .gitignore
-echo Thumbs.db >> .gitignore
-
-:: Vérifier le contenu
-type .gitignore
-
-
-# Créer et basculer sur la nouvelle branche
-git checkout -b double-correction
-
-# Vérifier que vous êtes sur la bonne branche
-git branch
-# * double-correction devrait être affiché
-
-# 1. Vérifier que vous avez des fichiers à commiter
-git status
-
-# 2. Ajouter tous les fichiers
-git add .
-
-# 3. Vérifier que les fichiers sont bien ajoutés
-git status
-# Les fichiers devraient apparaître en vert
-
-# 4. Faire le premier commit
-git commit -m "Initial commit - système double correction"
-
-# 5. Maintenant vérifier la branche
-git branch
-# Vous devriez voir * double-correction
-
-# 6. Vérifier HEAD
-git rev-parse --abbrev-ref HEAD
-# Maintenant ça devrait afficher "double-correction"
