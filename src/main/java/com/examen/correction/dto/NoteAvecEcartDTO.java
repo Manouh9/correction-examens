@@ -16,7 +16,6 @@ public class NoteAvecEcartDTO {
     private BigDecimal noteMoyenne;
     private BigDecimal ecartNotes;
     
-    // Constructeurs
     public NoteAvecEcartDTO() {}
     
     public NoteAvecEcartDTO(Long idExamen, String etudiantNom, String etudiantPrenom, 

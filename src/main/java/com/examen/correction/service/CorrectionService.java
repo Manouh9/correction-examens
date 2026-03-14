@@ -16,11 +16,17 @@ public interface CorrectionService {
     NoteFinaleDTO determinerNoteFinale(Long idExamen);
     List<NoteFinaleDTO> determinerNotesFinalesTousExamens();
     
+    // Recherche par étudiant et matière
+    NoteFinaleDTO chercherNoteParEtudiantEtMatiere(Long etudiantId, Long matiereId);
+    
     // Validation selon les paramètres
     boolean verifierCondition(Parametre parametre, BigDecimal ecart);
     BigDecimal appliquerResolution(String resolution, List<BigDecimal> notes);
     
+    // Calculs statistiques
+    BigDecimal calculerMediane(List<BigDecimal> notes);
+    BigDecimal calculerEcartType(List<BigDecimal> notes, BigDecimal moyenne);
+    
     // Récupération des paramètres applicables
     Parametre trouverParametreApplicable(Examen examen);
-    NoteFinaleDTO chercherNoteParEtudiantEtMatiere(Long etudiantId, Long matiereId);
 }

@@ -14,7 +14,6 @@ public class NoteController {
     @Autowired
     private NoteRepository noteRepository;
 
-    // Vos méthodes pour les notes ici
     @GetMapping
     public String listeNotes(Model model) {
         model.addAttribute("notes", noteRepository.findAll());

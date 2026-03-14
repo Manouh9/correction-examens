@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -58,7 +59,6 @@ public class CorrectionServiceImpl implements CorrectionService {
         
         // Vérifier s'il y a des notes
         if (notes == null || notes.isEmpty()) {
-            // Retourner un DTO vide
             return new NoteAvecEcartDTO(
                 examen.getIdExamen(),
                 examen.getEtudiant().getNom(),
@@ -99,6 +99,7 @@ public class CorrectionServiceImpl implements CorrectionService {
             noteMoyenne = somme.divide(new BigDecimal(valeursNotes.size()), 2, RoundingMode.HALF_UP);
         }
         
+        // Calcul de l'écart (max - min) - fonctionne pour 2, 3, 4... correcteurs
         BigDecimal ecart = noteMax.subtract(noteMin);
         
         return new NoteAvecEcartDTO(
@@ -124,32 +125,39 @@ public class CorrectionServiceImpl implements CorrectionService {
         // Calculer les statistiques de base
         NoteAvecEcartDTO stats = calculerEcartParExamen(idExamen);
         
+        // Calculer la médiane
+        BigDecimal mediane = calculerMediane(stats.getNotes());
+        
+        // Calculer l'écart type
+        BigDecimal ecartType = calculerEcartType(stats.getNotes(), stats.getNoteMoyenne());
+        
         // Trouver le paramètre applicable
         Parametre parametre = trouverParametreApplicable(examen);
         
-        if (parametre == null) {
-            // Pas de paramètre configuré, utiliser la moyenne par défaut
-            return creerNoteFinaleParDefaut(stats, examen);
-        }
-        
-        // Vérifier la condition
-        boolean conditionVerifiee = verifierCondition(parametre, stats.getEcartNotes());
-        
-        // Déterminer la note finale selon la résolution
+        // Déterminer la note finale
         BigDecimal noteFinale;
         String resolutionAppliquee;
         
-        if (conditionVerifiee) {
-            // Appliquer la résolution configurée
-            noteFinale = appliquerResolution(
-                parametre.getResolution().getNom(), 
-                stats.getNotes()
-            );
-            resolutionAppliquee = parametre.getResolution().getNom();
-        } else {
-            // Condition non vérifiée, utiliser la moyenne
+        if (parametre == null) {
+            // Pas de paramètre configuré, utiliser la moyenne
             noteFinale = stats.getNoteMoyenne();
-            resolutionAppliquee = "moyenne (défaut)";
+            resolutionAppliquee = "moyenne (par défaut)";
+        } else {
+            // Vérifier la condition
+            boolean conditionVerifiee = verifierCondition(parametre, stats.getEcartNotes());
+            
+            if (conditionVerifiee) {
+                // Appliquer la résolution configurée
+                noteFinale = appliquerResolution(
+                    parametre.getResolution().getNom(), 
+                    stats.getNotes()
+                );
+                resolutionAppliquee = parametre.getResolution().getNom();
+            } else {
+                // Condition non vérifiée, utiliser la moyenne
+                noteFinale = stats.getNoteMoyenne();
+                resolutionAppliquee = "moyenne (défaut)";
+            }
         }
         
         // Créer et retourner le DTO
@@ -158,10 +166,15 @@ public class CorrectionServiceImpl implements CorrectionService {
         dto.setEtudiantNom(examen.getEtudiant().getNom());
         dto.setEtudiantPrenom(examen.getEtudiant().getPrenom());
         dto.setMatiereNom(examen.getMatiere().getNomMatiere());
+        dto.setNotes(stats.getNotes());
+        dto.setCorrecteurs(stats.getCorrecteurs());
+        dto.setNombreCorrecteurs(stats.getNombreCorrecteurs());
         dto.setNoteMin(stats.getNoteMin());
         dto.setNoteMax(stats.getNoteMax());
         dto.setNoteMoyenne(stats.getNoteMoyenne());
+        dto.setMediane(mediane);
         dto.setEcartNotes(stats.getEcartNotes());
+        dto.setEcartType(ecartType);
         dto.setResolutionAppliquee(resolutionAppliquee);
         
         if (parametre != null) {
@@ -221,21 +234,61 @@ public class CorrectionServiceImpl implements CorrectionService {
             return BigDecimal.ZERO;
         }
         
+        // Trier les notes pour faciliter les calculs
+        List<BigDecimal> notesTriees = new ArrayList<>(notes);
+        Collections.sort(notesTriees);
+        
         switch (resolution.toLowerCase()) {
             case "superieur":
-                return notes.stream()
-                        .max(BigDecimal::compareTo)
-                        .orElse(BigDecimal.ZERO);
+                return notesTriees.get(notesTriees.size() - 1);  // Note la plus élevée
+                
             case "inferieur":
-                return notes.stream()
-                        .min(BigDecimal::compareTo)
-                        .orElse(BigDecimal.ZERO);
+                return notesTriees.get(0);  // Note la plus basse
+                
+            case "mediane":
+                return calculerMediane(notesTriees);
+                
             case "moyenne":
             default:
-                BigDecimal somme = notes.stream()
+                BigDecimal somme = notesTriees.stream()
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
-                return somme.divide(new BigDecimal(notes.size()), 2, RoundingMode.HALF_UP);
+                return somme.divide(new BigDecimal(notesTriees.size()), 2, RoundingMode.HALF_UP);
         }
+    }
+
+    @Override
+    public BigDecimal calculerMediane(List<BigDecimal> notes) {
+        if (notes == null || notes.isEmpty()) return BigDecimal.ZERO;
+        
+        List<BigDecimal> notesTriees = new ArrayList<>(notes);
+        Collections.sort(notesTriees);
+        
+        int taille = notesTriees.size();
+        int milieu = taille / 2;
+        
+        if (taille % 2 == 0) {
+            // Nombre pair : moyenne des deux du milieu
+            return notesTriees.get(milieu - 1)
+                    .add(notesTriees.get(milieu))
+                    .divide(new BigDecimal(2), 2, RoundingMode.HALF_UP);
+        } else {
+            // Nombre impair : élément du milieu
+            return notesTriees.get(milieu);
+        }
+    }
+
+    @Override
+    public BigDecimal calculerEcartType(List<BigDecimal> notes, BigDecimal moyenne) {
+        if (notes == null || notes.size() < 2) return BigDecimal.ZERO;
+        
+        BigDecimal sommeCarres = BigDecimal.ZERO;
+        for (BigDecimal note : notes) {
+            BigDecimal diff = note.subtract(moyenne);
+            sommeCarres = sommeCarres.add(diff.multiply(diff));
+        }
+        
+        BigDecimal variance = sommeCarres.divide(new BigDecimal(notes.size()), 10, RoundingMode.HALF_UP);
+        return new BigDecimal(Math.sqrt(variance.doubleValue())).setScale(2, RoundingMode.HALF_UP);
     }
 
     @Override
@@ -246,30 +299,11 @@ public class CorrectionServiceImpl implements CorrectionService {
                     examen.getDateExamen()
                 );
         
-        // Retourner le premier paramètre actif trouvé (ou le plus récent)
         return parametres.isEmpty() ? null : parametres.get(0);
     }
     
-    private NoteFinaleDTO creerNoteFinaleParDefaut(NoteAvecEcartDTO stats, Examen examen) {
-        NoteFinaleDTO dto = new NoteFinaleDTO();
-        dto.setIdExamen(examen.getIdExamen());
-        dto.setEtudiantNom(examen.getEtudiant().getNom());
-        dto.setEtudiantPrenom(examen.getEtudiant().getPrenom());
-        dto.setMatiereNom(examen.getMatiere().getNomMatiere());
-        dto.setNoteMin(stats.getNoteMin());
-        dto.setNoteMax(stats.getNoteMax());
-        dto.setNoteMoyenne(stats.getNoteMoyenne());
-        dto.setEcartNotes(stats.getEcartNotes());
-        dto.setResolutionAppliquee("moyenne (par défaut)");
-        dto.setNoteFinale(stats.getNoteMoyenne());
-        dto.setStatutConformite(determinerStatutConformite(stats.getNoteMoyenne()));
-        
-        return dto;
-    }
-
     @Override
     public NoteFinaleDTO chercherNoteParEtudiantEtMatiere(Long etudiantId, Long matiereId) {
-        // Utiliser la méthode corrigée
         Optional<Examen> examenOpt = examenRepository.findByEtudiant_IdEtudiantAndMatiere_IdMatiere(etudiantId, matiereId);
         
         if (!examenOpt.isPresent()) {
@@ -281,7 +315,6 @@ public class CorrectionServiceImpl implements CorrectionService {
         
         Examen examen = examenOpt.get();
         
-        // Vérifier si l'examen a des notes
         if (examen.getNotes() == null || examen.getNotes().isEmpty()) {
             NoteFinaleDTO dto = new NoteFinaleDTO();
             dto.setNoteFinale(null);

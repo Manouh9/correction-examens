@@ -62,6 +62,7 @@ CREATE TABLE examen (
     FOREIGN KEY (id_matiere) REFERENCES matiere(id_matiere)
 );
 
+
 -- Table des notes (corrections)
 CREATE TABLE note (
     id_note INT PRIMARY KEY AUTO_INCREMENT,
@@ -74,8 +75,6 @@ CREATE TABLE note (
     FOREIGN KEY (id_correcteur) REFERENCES correcteur(id_correcteur),
     UNIQUE KEY unique_correction (id_examen, id_correcteur)
 );
-
-
 
 SELECT 
     e.nom AS etudiant_nom,
@@ -165,50 +164,19 @@ INSERT INTO correcteur (nom, prenom, email) VALUES
 ('Rakotofringa', 'Pierra', 'pierre.rakotofringa@gmail.com'),
 ('Andrianandrasana', 'Marie', 'marie.andrianandrasana@gmail.com');
 
+INSERT INTO correcteur (nom, prenom, email) VALUES
+('Correcteur1', 'Correcteur1', 'Correcteur1@gmail.com'),
+('Correcteur2', 'Correcteur2', 'Correcteur2@gmail.com'),
+('Correcteur3', 'Correcteur3', 'Correcteur3@gmail.com');
+
 INSERT INTO resolution (nom) VALUES 
 ('moyenne'),
 ('superieur'), 
 ('inferieur');
 
-INSERT INTO operateur (nom_operateur, symbole) VALUES
-('egal', '='),
-('superieur', '>'),
-('inferieur', '<'),
-('superieur_egal', '>='),
-('inferieur_egal', '<='),
-('entre', 'BETWEEN');
+INSERT INTO resolution (nom) VALUES ('mediane');
 
-INSERT INTO examen (id_etudiant, id_matiere, date_examen) VALUES
-(1,1, '2024-03-15');
-INSERT INTO examen (id_etudiant, id_matiere, date_examen) VALUES
-(1,2, '2024-03-15');
+-- Supprimer toutes les lignes et réinitialiser les AUTO_INCREMENT
+TRUNCATE TABLE parametre;
 
--- Insérer deux corrections différentes pour la même copie
-INSERT INTO corrections (id_copie, id_correcteur, note, date_correction, commentaires) VALUES
-(1, 1, 10.5, '2024-03-20 14:30:00', 'Raisonnement correct mais quelques erreurs'),
-(1, 2, 14.0, '2024-03-21 09:15:00', 'Bonne copie, très bien rédigé');
-
-INSERT INTO corrections (id_copie, id_correcteur, note, date_correction, commentaires) VALUES
-(1, 1, 10.5, '2024-03-20 14:30:00', 'Raisonnement correct mais quelques erreurs'),
-(1, 2, 14.0, '2024-03-21 09:15:00', 'Bonne copie, très bien rédigé');
-
--- exemple
--- Maths : si écart > 2, prendre la note la plus élevée
-INSERT INTO parametre (id_matiere, id_resolution, id_operateur, seuil_min, date_application, active) VALUES 
-(2, 2, 2, 2.0, '2024-01-01', true);
-
--- Français : si écart <= 3, prendre la moyenne
-INSERT INTO parametre (id_matiere, id_resolution, id_operateur, seuil_min, date_application, active) VALUES 
-(2, 1, 5, 3.0, '2024-01-01', true);
-
--- Physique : si écart > 1.5, prendre la note la plus basse
-INSERT INTO parametre (id_matiere, id_resolution, id_operateur, seuil_min, date_application, active) VALUES 
-(3, 3, 2, 1.5, '2024-01-01', true);
-
--- Histoire : toujours prendre la moyenne
-INSERT INTO parametre (id_matiere, id_resolution, id_operateur, seuil_min, date_application, active) VALUES 
-(4, 1, 5, 5.0, '2024-01-01', true);
-
--- Anglais : toujours prendre la note la plus élevée
-INSERT INTO parametre (id_matiere, id_resolution, id_operateur, seuil_min, date_application, active) VALUES 
-(5, 2, 2, 0.0, '2024-01-01', true);
+TRUNCATE TABLE note;
