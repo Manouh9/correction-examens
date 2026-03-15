@@ -26,7 +26,9 @@ public interface CorrectionService {
     // Calculs statistiques
     BigDecimal calculerMediane(List<BigDecimal> notes);
     BigDecimal calculerEcartType(List<BigDecimal> notes, BigDecimal moyenne);
+    BigDecimal calculerEcartPourExamen(Long idExamen);
     
-    // Récupération des paramètres applicables
+    // Récupération des paramètres applicables avec logique de proximité
     Parametre trouverParametreApplicable(Examen examen);
+    Parametre trouverParametreLePlusProche(List<Parametre> parametres, BigDecimal ecart);
 }

@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -57,7 +58,6 @@ public class CorrectionServiceImpl implements CorrectionService {
         
         List<Note> notes = examen.getNotes();
         
-        // Vérifier s'il y a des notes
         if (notes == null || notes.isEmpty()) {
             return new NoteAvecEcartDTO(
                 examen.getIdExamen(),
@@ -93,13 +93,11 @@ public class CorrectionServiceImpl implements CorrectionService {
         BigDecimal somme = valeursNotes.stream()
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        // Éviter la division par zéro
         BigDecimal noteMoyenne = BigDecimal.ZERO;
         if (!valeursNotes.isEmpty()) {
             noteMoyenne = somme.divide(new BigDecimal(valeursNotes.size()), 2, RoundingMode.HALF_UP);
         }
         
-        // Calcul de l'écart (max - min) - fonctionne pour 2, 3, 4... correcteurs
         BigDecimal ecart = noteMax.subtract(noteMin);
         
         return new NoteAvecEcartDTO(
@@ -122,16 +120,12 @@ public class CorrectionServiceImpl implements CorrectionService {
         Examen examen = examenRepository.findById(idExamen)
                 .orElseThrow(() -> new RuntimeException("Examen non trouvé"));
         
-        // Calculer les statistiques de base
         NoteAvecEcartDTO stats = calculerEcartParExamen(idExamen);
         
-        // Calculer la médiane
         BigDecimal mediane = calculerMediane(stats.getNotes());
-        
-        // Calculer l'écart type
         BigDecimal ecartType = calculerEcartType(stats.getNotes(), stats.getNoteMoyenne());
         
-        // Trouver le paramètre applicable
+        // Trouver le paramètre applicable avec la nouvelle logique
         Parametre parametre = trouverParametreApplicable(examen);
         
         // Déterminer la note finale
@@ -139,28 +133,23 @@ public class CorrectionServiceImpl implements CorrectionService {
         String resolutionAppliquee;
         
         if (parametre == null) {
-            // Pas de paramètre configuré, utiliser la moyenne
             noteFinale = stats.getNoteMoyenne();
             resolutionAppliquee = "moyenne (par défaut)";
         } else {
-            // Vérifier la condition
             boolean conditionVerifiee = verifierCondition(parametre, stats.getEcartNotes());
             
             if (conditionVerifiee) {
-                // Appliquer la résolution configurée
                 noteFinale = appliquerResolution(
                     parametre.getResolution().getNom(), 
                     stats.getNotes()
                 );
-                resolutionAppliquee = parametre.getResolution().getNom();
+                resolutionAppliquee = parametre.getResolution().getNom() + " (condition vérifiée)";
             } else {
-                // Condition non vérifiée, utiliser la moyenne
                 noteFinale = stats.getNoteMoyenne();
-                resolutionAppliquee = "moyenne (défaut)";
+                resolutionAppliquee = "moyenne (condition non vérifiée)";
             }
         }
         
-        // Créer et retourner le DTO
         NoteFinaleDTO dto = new NoteFinaleDTO();
         dto.setIdExamen(examen.getIdExamen());
         dto.setEtudiantNom(examen.getEtudiant().getNom());
@@ -234,20 +223,16 @@ public class CorrectionServiceImpl implements CorrectionService {
             return BigDecimal.ZERO;
         }
         
-        // Trier les notes pour faciliter les calculs
         List<BigDecimal> notesTriees = new ArrayList<>(notes);
         Collections.sort(notesTriees);
         
         switch (resolution.toLowerCase()) {
             case "superieur":
-                return notesTriees.get(notesTriees.size() - 1);  // Note la plus élevée
-                
+                return notesTriees.get(notesTriees.size() - 1);
             case "inferieur":
-                return notesTriees.get(0);  // Note la plus basse
-                
+                return notesTriees.get(0);
             case "mediane":
                 return calculerMediane(notesTriees);
-                
             case "moyenne":
             default:
                 BigDecimal somme = notesTriees.stream()
@@ -267,12 +252,10 @@ public class CorrectionServiceImpl implements CorrectionService {
         int milieu = taille / 2;
         
         if (taille % 2 == 0) {
-            // Nombre pair : moyenne des deux du milieu
             return notesTriees.get(milieu - 1)
                     .add(notesTriees.get(milieu))
                     .divide(new BigDecimal(2), 2, RoundingMode.HALF_UP);
         } else {
-            // Nombre impair : élément du milieu
             return notesTriees.get(milieu);
         }
     }
@@ -292,6 +275,29 @@ public class CorrectionServiceImpl implements CorrectionService {
     }
 
     @Override
+    public BigDecimal calculerEcartPourExamen(Long idExamen) {
+        Examen examen = examenRepository.findById(idExamen)
+                .orElseThrow(() -> new RuntimeException("Examen non trouvé"));
+        
+        List<Note> notes = examen.getNotes();
+        if (notes == null || notes.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        
+        BigDecimal noteMin = notes.stream()
+                .map(Note::getValeurNote)
+                .min(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO);
+        
+        BigDecimal noteMax = notes.stream()
+                .map(Note::getValeurNote)
+                .max(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO);
+        
+        return noteMax.subtract(noteMin);
+    }
+
+    @Override
     public Parametre trouverParametreApplicable(Examen examen) {
         List<Parametre> parametres = parametreRepository
                 .trouverParametresApplicables(
@@ -299,9 +305,77 @@ public class CorrectionServiceImpl implements CorrectionService {
                     examen.getDateExamen()
                 );
         
-        return parametres.isEmpty() ? null : parametres.get(0);
+        if (parametres.isEmpty()) {
+            return null;
+        }
+        
+        if (parametres.size() == 1) {
+            return parametres.get(0);
+        }
+        
+        BigDecimal ecart = calculerEcartPourExamen(examen.getIdExamen());
+        System.out.println("=== RECHERCHE DU PARAMÈTRE LE PLUS PROCHE ===");
+        System.out.println("Matière: " + examen.getMatiere().getNomMatiere());
+        System.out.println("Écart calculé: " + ecart);
+        System.out.println("Nombre de paramètres: " + parametres.size());
+        
+        Parametre resultat = trouverParametreLePlusProche(parametres, ecart);
+        
+        System.out.println("Paramètre choisi - Seuil: " + resultat.getSeuilMin() + 
+                          ", Résolution: " + resultat.getResolution().getNom());
+        System.out.println("=============================================");
+        
+        return resultat;
     }
-    
+
+    @Override
+    public Parametre trouverParametreLePlusProche(List<Parametre> parametres, BigDecimal ecart) {
+        // Trier les paramètres par seuil croissant
+        parametres.sort(Comparator.comparing(Parametre::getSeuilMin));
+        
+        System.out.println("Paramètres triés par seuil:");
+        for (Parametre p : parametres) {
+            System.out.println("  - Seuil: " + p.getSeuilMin() + 
+                             ", Opérateur: " + p.getOperateur().getSymbole() +
+                             ", Résolution: " + p.getResolution().getNom());
+        }
+        
+        // Vérifier d'abord si un paramètre satisfait déjà la condition
+        for (Parametre p : parametres) {
+            if (verifierCondition(p, ecart)) {
+                System.out.println("→ Condition déjà satisfaite avec seuil " + p.getSeuilMin());
+                return p;
+            }
+        }
+        
+        // Sinon, trouver le seuil le plus proche
+        Parametre meilleur = null;
+        BigDecimal plusPetiteDifference = null;
+        
+        for (Parametre p : parametres) {
+            BigDecimal difference = ecart.subtract(p.getSeuilMin()).abs();
+            System.out.println("Seuil: " + p.getSeuilMin() + ", Distance: " + difference);
+            
+            if (plusPetiteDifference == null || difference.compareTo(plusPetiteDifference) < 0) {
+                plusPetiteDifference = difference;
+                meilleur = p;
+                System.out.println("  → Nouveau meilleur");
+            } else if (difference.compareTo(plusPetiteDifference) == 0) {
+                // En cas d'égalité, prendre le seuil le plus petit
+                System.out.println("  → Égalité de distance");
+                if (p.getSeuilMin().compareTo(meilleur.getSeuilMin()) < 0) {
+                    meilleur = p;
+                    System.out.println("    → Prise du seuil le plus petit");
+                }
+            }
+        }
+        
+        System.out.println("→ Meilleur seuil: " + meilleur.getSeuilMin() + 
+                         " (distance: " + plusPetiteDifference + ")");
+        
+        return meilleur;
+    }
+
     @Override
     public NoteFinaleDTO chercherNoteParEtudiantEtMatiere(Long etudiantId, Long matiereId) {
         Optional<Examen> examenOpt = examenRepository.findByEtudiant_IdEtudiantAndMatiere_IdMatiere(etudiantId, matiereId);
